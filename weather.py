@@ -76,6 +76,14 @@ epd.Clear()
 
 from settings import *
 
+import dateutil.parser
+from datetime import datetime, timezone
+
+def iso86901_datetime_age(n):
+    now = datetime.now(timezone.utc)
+    diff = now - dateutil.parser.parse(n)
+    return diff.total_seconds()
+
 def process_loop():
     while True:
         # Get the PM 2.5 value from thingspeak first, but don't error out.
@@ -86,14 +94,18 @@ def process_loop():
                 thingspeak_response = requests.get(THINGSPEAK_URL)
                 print('Connection to Thingspeak successful.')
                 if thingspeak_response.status_code == 200:
-                    response_pm_2_5 = thingspeak_response.json()['feeds'][0]['field2']
+                    thingspeak_feed = thingspeak_response.json()['feeds'][0]
+                    response_pm_2_5 = thingspeak_feed['field2']
+                    response_pm_2_5_date = thingspeak_feed['created_at']
                     break
                 else:
                     response_pm_2_5 = ''
+                    response_pm_2_5_date = None
                     print(f'Thingspeak failed s={response.status_code}')
             except:
                 print('Thingspeak connection error.')
                 response_pm_2_5 = ''
+                response_pm_2_5_date = None
 
         # Ensure there are no errors with connection
         error_connect = True
@@ -165,7 +177,6 @@ def process_loop():
                 r.location = LOCATION
                 r.temp_current = format(temp_current, '.0f') + u'\N{DEGREE SIGN}F'
                 r.feels_like = 'Feels like: ' + format(feels_like, '.0f') +  u'\N{DEGREE SIGN}F'
-                r.pm_2_5 = 'PM 2.5: ' + str(response_pm_2_5) + u'\N{GREEK SMALL LETTER MU}' + 'g/m' + u'\N{SUPERSCRIPT THREE}'
                 r.humidity = 'Humidity: ' + str(humidity) + '%'
                 r.wind = 'Wind: ' + format(wind, '.1f') + ' MPH'
                 r.report = 'Now: ' + report.title()
@@ -173,6 +184,13 @@ def process_loop():
                 r.temp_min = 'Low:  ' + format(temp_min, '>.0f') + u'\N{DEGREE SIGN}F'
                 r.precip_percent = 'Precip: ' + str(format(daily_precip_percent, '.0f'))  + '%'
                 r.icon_code = icon_code
+                if response_pm_2_5_date is None:
+                    r.pm_2_5 = f'PM 2.5: ---'
+                elif iso86901_datetime_age(response_pm_2_5_date) < 1000:
+                    r.pm_2_5 = 'PM 2.5: ' + str(response_pm_2_5) + u'\N{GREEK SMALL LETTER MU}' + 'g/m' + u'\N{SUPERSCRIPT THREE}'
+                else:
+                    age = int(iso86901_datetime_age(response_pm_2_5_date))
+                    r.pm_2_5 = f'PM 2.5: stale {str(age)}s'
 
                 # Set error code to false
                 error = False

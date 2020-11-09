@@ -22,9 +22,31 @@ from io import BytesIO
 import csv
 from collections import namedtuple
 
-# define funciton for writing image and sleeping for 5 min.
-def write_to_screen(image, sleep_seconds):
+from settings import *
+
+import dateutil.parser
+from datetime import datetime, timezone
+
+# Set the fonts
+font22 = ImageFont.truetype(os.path.join(fontdir, 'Font.ttc'), 22)
+font30 = ImageFont.truetype(os.path.join(fontdir, 'Font.ttc'), 30)
+font35 = ImageFont.truetype(os.path.join(fontdir, 'Font.ttc'), 35)
+font50 = ImageFont.truetype(os.path.join(fontdir, 'Font.ttc'), 50)
+font60 = ImageFont.truetype(os.path.join(fontdir, 'Font.ttc'), 60)
+font100 = ImageFont.truetype(os.path.join(fontdir, 'Font.ttc'), 100)
+font160 = ImageFont.truetype(os.path.join(fontdir, 'Font.ttc'), 160)
+# Set the colors
+black = 'rgb(0,0,0)'
+white = 'rgb(255,255,255)'
+grey = 'rgb(235,235,235)'
+
+SIMULATE=True
+
+def write_to_screen(image):
     print('Writing to screen.')
+    if SIMULATE:
+        print("SIMULATED")
+        return
     # Write to screen
     h_image = Image.new('1', (epd.width, epd.height), 255)
     # Open the template
@@ -32,14 +54,13 @@ def write_to_screen(image, sleep_seconds):
     # Initialize the drawing context with template as background
     h_image.paste(screen_output_file, (0, 0))
     epd.display(epd.getbuffer(h_image))
-    # Sleep
-    print('Sleeping for ' + str(sleep_seconds) +'.')
-    time.sleep(sleep_seconds)
 
-# define function for displaying error
 def display_error(error_source):
     # Display an error
     print('Error in the', error_source, 'request.')
+    if SIMULATE:
+        print("SIMULATED ERROR")
+        return
     # Initialize drawing
     error_image = Image.new('1', (epd.width, epd.height), 255)
     # Initialize the drawing
@@ -56,28 +77,13 @@ def display_error(error_source):
     # Write error to screen 
     write_to_screen(error_image_file, 30)
 
-# Set the fonts
-font22 = ImageFont.truetype(os.path.join(fontdir, 'Font.ttc'), 22)
-font30 = ImageFont.truetype(os.path.join(fontdir, 'Font.ttc'), 30)
-font35 = ImageFont.truetype(os.path.join(fontdir, 'Font.ttc'), 35)
-font50 = ImageFont.truetype(os.path.join(fontdir, 'Font.ttc'), 50)
-font60 = ImageFont.truetype(os.path.join(fontdir, 'Font.ttc'), 60)
-font100 = ImageFont.truetype(os.path.join(fontdir, 'Font.ttc'), 100)
-font160 = ImageFont.truetype(os.path.join(fontdir, 'Font.ttc'), 160)
-# Set the colors
-black = 'rgb(0,0,0)'
-white = 'rgb(255,255,255)'
-grey = 'rgb(235,235,235)'
-
-# Initialize and clear screen
-print('Initializing and clearing screen.')
-epd.init()
-epd.Clear()
-
-from settings import *
-
-import dateutil.parser
-from datetime import datetime, timezone
+def screen_sleep(sleep_seconds):
+    # Sleep
+    time.sleep(1)
+    if not SIMULATE:
+        epd.sleep()
+    print(f'Sleeping for {sleep_seconds}.')
+    time.sleep(sleep_seconds)
 
 def iso86901_datetime_age(n):
     now = datetime.now(timezone.utc)
@@ -194,7 +200,7 @@ def process_loop():
                     r.pm_2_5 = 'PM 2.5: ' + str(response_pm_2_5) + u'\N{GREEK SMALL LETTER MU}' + 'g/m' + u'\N{SUPERSCRIPT THREE}'
                 else:
                     age = int(iso86901_datetime_age(response_pm_2_5_date))
-                    r.pm_2_5 = f'PM 2.5: stale {str(age)}s'
+                    r.pm_2_5 = f'PM 2.5: stale {age}s'
 
                 # Set error code to false
                 error = False
@@ -228,18 +234,37 @@ def display_results(r):
     icon_image = Image.open(os.path.join(icondir, icon_file))
 
     # Draw top left box
-    ## Place a black rectangle outline
-    draw.rectangle((25, 20, 225, 180), outline=black)
     ## Paste the image
     template.paste(icon_image, (40, 15))
+    ## Place a black rectangle outline
+    draw.rectangle((25, 20, 225, 180), outline=black)
     ## Draw Text
     draw.text((30, 200), r.report, font=font22, fill=black)
     draw.text((30, 240), r.precip_percent, font=font30, fill=black)
 
-    # Draw top right box
-    draw.text((375, 35), r.temp_current, font=font100, fill=black)
-    draw.text((350, 210), r.feels_like, font=font35, fill=black)
+    # Draw top middle box
+    draw.text((285, 35), r.temp_current, font=font100, fill=black)
+    draw.text((285, 210), r.feels_like, font=font35, fill=black)
 
+    # Draw top right box
+    # (x0, y0,  x1, y1)
+    # Debug Outline
+    LEFT_EDGE = 520
+    LEFT_OFFSET = 520
+    TOP_EDGE = 10
+    TOP_OFFSET = 20
+    BOTTOM_EDGE = 295
+    RIGHT_EDGE = 789
+    YMAX = 300
+    draw.rectangle((LEFT_EDGE, TOP_EDGE, RIGHT_EDGE, BOTTOM_EDGE), fill=white)
+    data = [4,5,1,4,4]
+    x = 0
+    for i in data:
+        x = x + 10
+        y = YMAX + TOP_OFFSET + TOP_EDGE - i
+        # x0,y0 x1,y1
+        draw.line((x+LEFT_OFFSET,BOTTOM_EDGE,x+LEFT_OFFSET,y-40), width=5, fill=black)
+    
     # Draw bottom left box
     draw.text((35, 325), r.temp_max, font=font50, fill=black)
     draw.rectangle((170, 385, 265, 387), fill=black)
@@ -272,8 +297,14 @@ def display_results(r):
     	epd.Clear()
     
     # Write to screen
-    write_to_screen(screen_output_file, 600)
-
+    write_to_screen(screen_output_file)
+    # Sleep
+    screen_sleep(600)
 
 if __name__ == "__main__":
+    # Initialize and clear screen
+    print('Initializing and clearing screen.')
+    if not SIMULATE:
+        epd.init()
+        epd.Clear()
     process_loop()

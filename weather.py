@@ -223,33 +223,37 @@ def display_results(r):
     # Initialize the drawing context with template as background
     draw = ImageDraw.Draw(template)
     
-    # Draw top left box
     ## Open icon file
     icon_file = r.icon_code + '.png' 
     icon_image = Image.open(os.path.join(icondir, icon_file))
-    ### Paste the image
-    template.paste(icon_image, (40, 15))
+
+    # Draw top left box
     ## Place a black rectangle outline
     draw.rectangle((25, 20, 225, 180), outline=black)
-    ## Draw text
+    ## Paste the image
+    template.paste(icon_image, (40, 15))
+    ## Draw Text
     draw.text((30, 200), r.report, font=font22, fill=black)
     draw.text((30, 240), r.precip_percent, font=font30, fill=black)
+
     # Draw top right box
     draw.text((375, 35), r.temp_current, font=font160, fill=black)
     draw.text((350, 210), r.feels_like, font=font50, fill=black)
+
     # Draw bottom left box
     draw.text((35, 325), r.temp_max, font=font50, fill=black)
     draw.rectangle((170, 385, 265, 387), fill=black)
     draw.text((35, 390), r.temp_min, font=font50, fill=black)
+
     # Draw bottom middle box
     draw.text((345, 320), r.pm_2_5, font=font30, fill=black)
     draw.text((345, 360), r.humidity, font=font30, fill=black)
     draw.text((345, 400), r.wind, font=font30, fill=black)
+
     # Draw bottom right box
     draw.text((627, 330), 'UPDATED', font=font35, fill=white)
     current_time = datetime.now().strftime('%H:%M')
     draw.text((627, 375), current_time, font = font60, fill=white)
-
     ## Add a reminder to take out trash on Mon
     weekday = datetime.today().weekday()
     if weekday == 0:

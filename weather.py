@@ -237,8 +237,8 @@ def display_results(r):
     draw.text((30, 240), r.precip_percent, font=font30, fill=black)
 
     # Draw top right box
-    draw.text((375, 35), r.temp_current, font=font160, fill=black)
-    draw.text((350, 210), r.feels_like, font=font50, fill=black)
+    draw.text((375, 35), r.temp_current, font=font100, fill=black)
+    draw.text((350, 210), r.feels_like, font=font35, fill=black)
 
     # Draw bottom left box
     draw.text((35, 325), r.temp_max, font=font50, fill=black)

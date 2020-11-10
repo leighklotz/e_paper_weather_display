@@ -40,7 +40,7 @@ black = 'rgb(0,0,0)'
 white = 'rgb(255,255,255)'
 grey = 'rgb(235,235,235)'
 
-SIMULATE=True
+SIMULATE=False
 
 def write_to_screen(image):
     print('Writing to screen.')
@@ -54,6 +54,7 @@ def write_to_screen(image):
     # Initialize the drawing context with template as background
     h_image.paste(screen_output_file, (0, 0))
     epd.display(epd.getbuffer(h_image))
+    print("Written to screen.")
 
 def display_error(error_source):
     # Display an error
@@ -75,7 +76,7 @@ def display_error(error_source):
     # Close error image
     error_image.close()
     # Write error to screen 
-    write_to_screen(error_image_file, 30)
+    write_to_screen(error_image_file)
 
 def screen_sleep(sleep_seconds):
     # Sleep
@@ -104,7 +105,7 @@ def process_loop():
                     response_pm_2_5 = thingspeak_feeds[-1]['field2']
                     response_pm_2_5_date = thingspeak_feeds[-1]['created_at']
                     response_pm_2_5_dates = [f['created_at'] for f in thingspeak_feeds]
-                    response_pm_2_5_history = [f['field2'] for f in thingspeak_feeds]
+                    response_pm_2_5_history = [int(f['field2']) for f in thingspeak_feeds]
                     break
                 else:
                     response_pm_2_5 = ''
@@ -194,12 +195,14 @@ def process_loop():
                 r.temp_min = 'Low:  ' + format(temp_min, '>.0f') + u'\N{DEGREE SIGN}F'
                 r.precip_percent = 'Precip: ' + str(format(daily_precip_percent, '.0f'))  + '%'
                 r.icon_code = icon_code
-                if response_pm_2_5_date is None:
+                r.pm_2_5_date = response_pm_2_5_date
+                r.pm_2_5_history = response_pm_2_5_history
+                if r.pm_2_5_date is None:
                     r.pm_2_5 = f'PM 2.5: ---'
-                elif iso86901_datetime_age(response_pm_2_5_date) < 1000:
+                elif iso86901_datetime_age(r.pm_2_5_date) < 1000:
                     r.pm_2_5 = 'PM 2.5: ' + str(response_pm_2_5) + u'\N{GREEK SMALL LETTER MU}' + 'g/m' + u'\N{SUPERSCRIPT THREE}'
                 else:
-                    age = int(iso86901_datetime_age(response_pm_2_5_date))
+                    age = int(iso86901_datetime_age(r.pm_2_5_date))
                     r.pm_2_5 = f'PM 2.5: stale {age}s'
 
                 # Set error code to false
@@ -224,6 +227,7 @@ def process_loop():
                 display_error('HTTP')
 
 def display_results(r):
+    print("display results")
     # Open template file
     template = Image.open(os.path.join(picdir, 'template.png'))
     # Initialize the drawing context with template as background
@@ -257,13 +261,13 @@ def display_results(r):
     RIGHT_EDGE = 789
     YMAX = 300
     draw.rectangle((LEFT_EDGE, TOP_EDGE, RIGHT_EDGE, BOTTOM_EDGE), fill=white)
-    data = [4,5,1,4,4]
-    x = 0
-    for i in data:
-        x = x + 10
-        y = YMAX + TOP_OFFSET + TOP_EDGE - i
-        # x0,y0 x1,y1
-        draw.line((x+LEFT_OFFSET,BOTTOM_EDGE,x+LEFT_OFFSET,y-40), width=5, fill=black)
+    if r.pm_2_5_date is not None:
+        x = 0
+        for i in r.pm_2_5_history:
+            x = x + 10
+            y = YMAX + TOP_OFFSET + TOP_EDGE - i
+            # x0,y0 x1,y1
+            draw.line((x+LEFT_OFFSET,BOTTOM_EDGE,x+LEFT_OFFSET,y-40), width=5, fill=black)
     
     # Draw bottom left box
     draw.text((35, 325), r.temp_max, font=font50, fill=black)
@@ -299,7 +303,9 @@ def display_results(r):
     # Write to screen
     write_to_screen(screen_output_file)
     # Sleep
+    print("Sleep 600")
     screen_sleep(600)
+    print("Sleep 600 done")
 
 if __name__ == "__main__":
     # Initialize and clear screen

@@ -94,18 +94,22 @@ def process_loop():
                 thingspeak_response = requests.get(THINGSPEAK_URL)
                 print('Connection to Thingspeak successful.')
                 if thingspeak_response.status_code == 200:
-                    thingspeak_feed = thingspeak_response.json()['feeds'][0]
-                    response_pm_2_5 = thingspeak_feed['field2']
-                    response_pm_2_5_date = thingspeak_feed['created_at']
+                    thingspeak_feeds = thingspeak_response.json()['feeds']
+                    response_pm_2_5 = thingspeak_feeds[-1]['field2']
+                    response_pm_2_5_date = thingspeak_feeds[-1]['created_at']
+                    response_pm_2_5_dates = [f['created_at'] for f in thingspeak_feeds]
+                    response_pm_2_5_history = [f['field2'] for f in thingspeak_feeds]
                     break
                 else:
                     response_pm_2_5 = ''
                     response_pm_2_5_date = None
+                    response_pm_2_5_history = []
                     print(f'Thingspeak failed s={response.status_code}')
             except:
                 print('Thingspeak connection error.')
                 response_pm_2_5 = ''
                 response_pm_2_5_date = None
+                response_pm_2_5_history = []
 
         # Ensure there are no errors with connection
         error_connect = True

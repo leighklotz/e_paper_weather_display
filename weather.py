@@ -53,6 +53,7 @@ def write_to_screen(image, sleep_seconds):
     screen_output_file = Image.open(os.path.join(picdir, image))
     # Initialize the drawing context with template as background
     h_image.paste(screen_output_file, (0, 0))
+    print("epd.display")
     epd.display(epd.getbuffer(h_image))
     print("Written to screen.")
     # Sleep
@@ -301,7 +302,7 @@ def display_results(r):
     
     # Refresh clear screen to avoid burn-in at 3:00 AM
     if datetime.now().strftime('%H') == '03':
-    	print('Clearning screen to avoid burn-in.')
+    	print('Clearing screen to avoid burn-in.')
     	epd.Clear()
     
     # Write to screen

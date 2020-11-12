@@ -3,13 +3,15 @@
 # It uses OpenWeatherMap API to display weather info
 import sys
 import os
+import signal
+
 picdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'pic')
 icondir = os.path.join(picdir, 'icon')
 fontdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'font')
 
 # Search lib folder for display driver modules
 sys.path.append('lib')
-from waveshare_epd import epd7in5_V2
+from waveshare_epd import epd7in5_V2, epdconfig
 epd = epd7in5_V2.EPD()
 
 from datetime import datetime
@@ -51,14 +53,17 @@ def write_to_screen(image, sleep_seconds):
     h_image = Image.new('1', (epd.width, epd.height), 255)
     # Open the template
     screen_output_file = Image.open(os.path.join(picdir, image))
-    # Initialize the drawing context with template as background
-    h_image.paste(screen_output_file, (0, 0))
-    print("epd.display")
-    epd.display(epd.getbuffer(h_image))
-    print("Written to screen.")
-    # Sleep
-    print('Sleeping for ' + str(sleep_seconds) +'.')
-    time.sleep(sleep_seconds)
+    try:
+        # Initialize the drawing context with template as background
+        h_image.paste(screen_output_file, (0, 0))
+        print("epd.display")
+        epd.display(epd.getbuffer(h_image))
+        print("written to screen")
+    except IOError as e:
+        print ('traceback.format_exc():\n%s',traceback.format_exc())
+        epdconfig.module_init()
+        epdconfig.module_exit()
+        exit()
 
 def display_error(error_source):
     # Display an error
@@ -83,12 +88,19 @@ def display_error(error_source):
     write_to_screen(error_image_file, 30)
 
 def screen_sleep(sleep_seconds):
-    # Sleep
-    time.sleep(1)
-    if not SIMULATE:
+    print('epd.sleep()')
+    try:
         epd.sleep()
+    except IOError as e:
+        print ('traceback.format_exc():\n%s',traceback.format_exc())
+        epdconfig.module_init()
+        epdconfig.module_exit()
+        exit()
     print(f'Sleeping for {sleep_seconds}.')
     time.sleep(sleep_seconds)
+    print("epd.init start")
+    epd.init()
+    print("epd.init done")
 
 def iso86901_datetime_age(n):
     now = datetime.now(timezone.utc)
@@ -231,7 +243,6 @@ def process_loop():
                 display_error('HTTP')
 
 def display_results(r):
-    print("display results")
     # Open template file
     template = Image.open(os.path.join(picdir, 'template.png'))
     # Initialize the drawing context with template as background
@@ -246,7 +257,7 @@ def display_results(r):
     template.paste(icon_image, (40, 15))
     ## Place a black rectangle outline
     draw.rectangle((25, 20, 225, 180), outline=black)
-    ## Draw Text
+    ## Draw text
     draw.text((30, 200), r.report, font=font22, fill=black)
     draw.text((30, 240), r.precip_percent, font=font30, fill=black)
 
@@ -307,7 +318,16 @@ def display_results(r):
     
     # Write to screen
     write_to_screen(screen_output_file, 300)
-
+    
+# from https://github.com/protostax/ProtoStax_Weather_Station_Demo/blob/master/main.py
+def ctrl_c_handler(signal, frame):
+    epdconfig.module_init()
+    epdconfig.module_exit()
+    exit(0)
+    
+    
+signal.signal(signal.SIGINT, ctrl_c_handler)
+    
 if __name__ == "__main__":
     # Initialize and clear screen
     print('Initializing and clearing screen.')

@@ -1,0 +1,15 @@
+API_KEY = 'asdfasdfadsfa'
+
+LOCATION = 'asdfasdfasdf'
+LATITUDE = '99.999999'
+LONGITUDE = '-120.11111'
+UNITS = 'imperial'
+CSV_OPTION = False # if csv_option == True, a weather data will be appended to 'record.csv'
+
+OWM_BASE_URL = 'http://api.openweathermap.org/data/3.0/onecall' 
+#EXCLUDE = "current,minutely,hourly,daily,alerts"
+EXCLUDE = "minutely,hourly,alerts"
+
+OWM_URL = f"{OWM_BASE_URL}?exclude={EXCLUDE}&lat={LATITUDE}&lon={LONGITUDE}&units={UNITS}&appid={API_KEY}"
+
+THINGSPEAK_URL = 'https://api.thingspeak.com/channels/asdfasdf/fields/2.json?results=25'

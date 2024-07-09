@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # This little program is for the Waveshare 7.5
 # inch Version 2 black and white only epaper display
 # It uses OpenWeatherMap API to display weather info
@@ -151,14 +153,17 @@ def process_loop():
         error = None
         while error == None:
             # Check status of code request
-            if response.status_code == 200:
+            if response.status_code != 200:
+                # Call function to display HTTP error
+                print(f"GET {OWM_URL} status={response.status_code} results={response.text}")
+                display_error(f"OWM API {response.status_code}")
+            else:
                 print('Connection to Open Weather successful.')
-                # get data in jason format
+                # get data in json format
                 data = response.json()
-
                 # get current dict block
                 current = data['current']
-                # get current
+                # get temp
                 temp_current = current['temp']
                 # get feels like
                 feels_like = current['feels_like']
@@ -237,10 +242,6 @@ def process_loop():
                 print('Probabilty of Precipitation: ' + str(format(daily_precip_percent, '.0f'))  + '%')
                 '''    
                 display_results(r)
-
-            else:
-                # Call function to display HTTP error
-                display_error('HTTP')
 
 def display_results(r):
     # Open template file

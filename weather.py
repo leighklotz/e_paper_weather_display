@@ -42,7 +42,7 @@ grey = 'rgb(235,235,235)'
 
 SIMULATE=False
 
-def write_to_screen(image):
+def write_to_screen(image, sleep_seconds):
     print('Writing to screen.')
     if SIMULATE:
         print("SIMULATED")
@@ -55,6 +55,9 @@ def write_to_screen(image):
     h_image.paste(screen_output_file, (0, 0))
     epd.display(epd.getbuffer(h_image))
     print("Written to screen.")
+    # Sleep
+    print('Sleeping for ' + str(sleep_seconds) +'.')
+    time.sleep(sleep_seconds)
 
 def display_error(error_source):
     # Display an error
@@ -76,7 +79,7 @@ def display_error(error_source):
     # Close error image
     error_image.close()
     # Write error to screen 
-    write_to_screen(error_image_file)
+    write_to_screen(error_image_file, 30)
 
 def screen_sleep(sleep_seconds):
     # Sleep
@@ -202,8 +205,8 @@ def process_loop():
                 elif iso86901_datetime_age(r.pm_2_5_date) < 1000:
                     r.pm_2_5 = 'PM 2.5: ' + str(response_pm_2_5) + u'\N{GREEK SMALL LETTER MU}' + 'g/m' + u'\N{SUPERSCRIPT THREE}'
                 else:
-                    age = int(iso86901_datetime_age(r.pm_2_5_date))
-                    r.pm_2_5 = f'PM 2.5: stale {age}s'
+                    age = int(iso86901_datetime_age(r.pm_2_5_date)/60)
+                    r.pm_2_5 = f'PM 2.5: stale {age}m'
 
                 # Set error code to false
                 error = False
@@ -283,10 +286,11 @@ def display_results(r):
     draw.text((627, 330), 'UPDATED', font=font35, fill=white)
     current_time = datetime.now().strftime('%H:%M')
     draw.text((627, 375), current_time, font = font60, fill=white)
+
     ## Add a reminder to take out trash on Mon
     weekday = datetime.today().weekday()
     if weekday == 0:
-        draw.rectangle((345, 13, 705, 55), fill =black)
+        draw.rectangle((345, 13, 755, 55), fill=black)
         draw.text((355, 15), 'TAKE OUT TRASH TONIGHT!', font=font30, fill=white)
         
     # Save the image for display as PNG
@@ -301,11 +305,7 @@ def display_results(r):
     	epd.Clear()
     
     # Write to screen
-    write_to_screen(screen_output_file)
-    # Sleep
-    print("Sleep 600")
-    screen_sleep(600)
-    print("Sleep 600 done")
+    write_to_screen(screen_output_file, 300)
 
 if __name__ == "__main__":
     # Initialize and clear screen

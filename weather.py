@@ -49,7 +49,7 @@ SIMULATE=False
 def write_to_screen(image, sleep_seconds):
     print('Writing to screen.')
     if SIMULATE:
-        print("SIMULATED")
+        print(f"SIMULATED - NOT SLEEPING {sleep_seconds}s")
         return
     # Write to screen
     h_image = Image.new('1', (epd.width, epd.height), 255)
@@ -66,6 +66,9 @@ def write_to_screen(image, sleep_seconds):
         epdconfig.module_init()
         epdconfig.module_exit()
         exit()
+    print("sleeping {sleep_seconds}s")
+    screen_sleep(sleep_seconds)
+
 
 def display_error(error_source):
     # Display an error

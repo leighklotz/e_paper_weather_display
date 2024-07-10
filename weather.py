@@ -93,6 +93,9 @@ def display_error(error_source):
     write_to_screen(error_image_file, 30)
 
 def screen_sleep(sleep_seconds):
+    print('sleep(2)')
+    time.sleep(2)
+    sleep_seconds -= 2
     print('epd.sleep()')
     try:
         epd.sleep()

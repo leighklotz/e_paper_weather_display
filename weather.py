@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+3#!/usr/bin/env python3
 
 # This little program is for the Waveshare 7.5
 # inch Version 2 black and white only epaper display
@@ -49,7 +49,7 @@ SIMULATE=False
 def write_to_screen(image, sleep_seconds):
     print('Writing to screen.')
     if SIMULATE:
-        print(f"SIMULATED - NOT SLEEPING {sleep_seconds}s")
+        print("SIMULATED - NOT SLEEPING " + str(sleep_second) + "s")
         return
     # Write to screen
     h_image = Image.new('1', (epd.width, epd.height), 255)
@@ -104,7 +104,7 @@ def screen_sleep(sleep_seconds):
         epdconfig.module_init()
         epdconfig.module_exit()
         exit()
-    print(f'Sleeping for {sleep_seconds}.')
+    print("Sleeping for " + str(sleep_seconds))
     time.sleep(sleep_seconds)
     print("epd.init start")
     epd.init()
@@ -116,12 +116,16 @@ def iso86901_datetime_age(n):
     return diff.total_seconds()
 
 def process_loop():
+    response_pm_2_5 = ''
+    response_pm_2_5_date = None
+    response_pm_2_5_history = []
+
     while True:
         # Get the PM 2.5 value from thingspeak first, but don't error out.
-        for http_try in range(3):
+        for http_try in range(0): # 3 was off
             try:
                 # HTTP request
-                print(f'Try #{http_try} to connect to Thingspeak.')
+                print("Try " + str(http_try) + " to connect to Thingspeak.")
                 thingspeak_response = requests.get(THINGSPEAK_URL)
                 print('Connection to Thingspeak successful.')
                 if thingspeak_response.status_code == 200:
@@ -135,7 +139,7 @@ def process_loop():
                     response_pm_2_5 = ''
                     response_pm_2_5_date = None
                     response_pm_2_5_history = []
-                    print(f'Thingspeak failed s={response.status_code}')
+                    print("Thingspeak failed s=" + str(response))
             except:
                 print('Thingspeak connection error.')
                 response_pm_2_5 = ''
@@ -160,9 +164,10 @@ def process_loop():
         while error == None:
             # Check status of code request
             if response.status_code != 200:
+                msg = "OWM API " + str(response.status_code) + " " + response.text
                 # Call function to display HTTP error
-                print(f"GET {OWM_URL} status={response.status_code} results={response.text}")
-                display_error(f"OWM API {response.status_code}")
+                print("GET " + msg)
+                display_error(msg)
             else:
                 print('Connection to Open Weather successful.')
                 # get data in json format
@@ -225,12 +230,12 @@ def process_loop():
                 r.pm_2_5_date = response_pm_2_5_date
                 r.pm_2_5_history = response_pm_2_5_history
                 if r.pm_2_5_date is None:
-                    r.pm_2_5 = f'PM 2.5: ---'
+                    r.pm_2_5 = 'PM 2.5: ---'
                 elif iso86901_datetime_age(r.pm_2_5_date) < 1000:
                     r.pm_2_5 = 'PM 2.5: ' + str(response_pm_2_5) + u'\N{GREEK SMALL LETTER MU}' + 'g/m' + u'\N{SUPERSCRIPT THREE}'
                 else:
                     age = int(iso86901_datetime_age(r.pm_2_5_date)/60)
-                    r.pm_2_5 = f'PM 2.5: stale {age}m'
+                    r.pm_2_5 = 'PM 2.5: stale ' + str(age) + 'm'
 
                 # Set error code to false
                 error = False
@@ -320,8 +325,8 @@ def display_results(r):
     
     # Refresh clear screen to avoid burn-in at 3:00 AM
     if datetime.now().strftime('%H') == '03':
-    	print('Clearing screen to avoid burn-in.')
-    	epd.Clear()
+        print('Clearing screen to avoid burn-in.')
+        epd.Clear()
     
     # Write to screen
     write_to_screen(screen_output_file, 300)
